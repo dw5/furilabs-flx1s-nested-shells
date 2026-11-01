@@ -1,0 +1,48 @@
+#!/bin/bash
+# Run Lomiri in a window on Phosh. See docs/lomiri-window.md.
+LIMIT=${NEST_LIMIT:-1800}   # seconds
+OUTPUT=HWCOMPOSER-1 SCALE=2
+
+P=$(pgrep -nx phosh) || exit 1
+eval "$(tr '\0' '\n' < /proc/$P/environ \
+  | grep -E '^(WAYLAND_DISPLAY|XDG_RUNTIME_DIR|DBUS_SESSION_BUS_ADDRESS|XDG_DATA_DIRS)=' \
+  | sed -E "s/=(.*)/='\1'/; s/^/export /")"
+HOST_RUNTIME=$XDG_RUNTIME_DIR HOST_WAYLAND=$WAYLAND_DISPLAY
+L=/tmp/lom; mkdir -p $L
+. "$HOME/.local/bin/nested-common"
+nested_toggle lomiri
+
+cleanup() {
+  pkill -9 -x lomiri
+  pkill -f "/usr/(bin|libexec)/.*[l]omiri-"
+  XDG_RUNTIME_DIR=$HOST_RUNTIME WAYLAND_DISPLAY=$HOST_WAYLAND nested_restore
+}
+trap cleanup EXIT
+trap 'exit 0' INT TERM HUP
+
+# Touch only lines up at scale 1.
+wlr-randr --output $OUTPUT --scale 1; sleep 2
+
+export LANG=C.UTF-8 XDG_SESSION_TYPE=wayland XDG_CURRENT_DESKTOP=Lomiri \
+  __EGL_VENDOR_LIBRARY_FILENAMES=/usr/share/glvnd/egl_vendor.d/50_mesa.json \
+  LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe EGL_PLATFORM=wayland \
+  MIR_SERVER_PLATFORM_DISPLAY_LIBS=mir:wayland \
+  MIR_SERVER_WAYLAND_HOST="$HOST_RUNTIME/$HOST_WAYLAND" \
+  QT_QPA_PLATFORM=mirserver GRID_UNIT_PX=16 FORM_FACTOR=handset
+export XDG_RUNTIME_DIR=$HOST_RUNTIME/lomiri
+mkdir -p -m 700 "$XDG_RUNTIME_DIR"
+export MIR_SOCKET=$XDG_RUNTIME_DIR/mir_socket
+unset WAYLAND_DISPLAY
+
+D=$HOME/.cache/nest-lomiri/devices; mkdir -p "$D"
+cat > "$D/radon.yaml" <<'Y'
+radon:
+  PrettyName: Furi FLX1s
+  DeviceType: phone
+  GridUnit: 16
+  PrimaryOrientation: Portrait
+Y
+export DEVICEINFO_DEVICE_PATH=$D DEVICEINFO_DEVICE_NAME=radon
+
+timeout -k 3 "$LIMIT" lomiri --mode=full-shell > $L/lomiri.log 2>&1 &
+wait $!

@@ -1,0 +1,49 @@
+--- a/settings/ztsettings.c
++++ b/settings/ztsettings.c
+@@ -896,18 +896,18 @@
+ 	snprintf(detail, sizeof(detail), "%d%%, %s", bat, app.battery_saver ? "battery saver on" : "discharging");
+ 	y = zmc_entry(cr, y, "battery saver", detail, ACT_OPEN_PAGE, PAGE_BATTERY);
+ 
+-	snprintf(detail, sizeof(detail), "Exynos 9810 (8 cores), %s", app.cpu_gov);
++	snprintf(detail, sizeof(detail), "MediaTek MT6877 (8 cores), %s", app.cpu_gov);
+ 	y = zmc_entry(cr, y, "processor", detail, ACT_OPEN_PAGE, PAGE_CPU);
+ 
+-	snprintf(detail, sizeof(detail), "3.5 GB RAM, swappiness %d", app.swappiness);
++	snprintf(detail, sizeof(detail), "8 GB RAM, swappiness %d", app.swappiness);
+ 	y = zmc_entry(cr, y, "virtual memory", detail, ACT_OPEN_PAGE, PAGE_VM);
+ 
+-	snprintf(detail, sizeof(detail), "Mali-G72 MP18 (%s), 60 FPS", app.gpu_gov);
++	snprintf(detail, sizeof(detail), "Mali-G68 (%s), drawn on the CPU here", app.gpu_gov);
+ 	y = zmc_entry(cr, y, "graphics", detail, ACT_OPEN_PAGE, PAGE_GPU);
+ 
+ 	y = zmc_entry(cr, y, "date + region", "date, time zone and regional formats", ACT_OPEN_PAGE, PAGE_DATE);
+ 
+-	y = zmc_entry(cr, y, "about", "Samsung Galaxy S9, ztOS Mobile", ACT_OPEN_PAGE, PAGE_ABOUT);
++	y = zmc_entry(cr, y, "about", "Furi FLX1s, ztMETRO on FuriOS", ACT_OPEN_PAGE, PAGE_ABOUT);
+ 
+ 	return y + 20;
+ }
+@@ -2521,7 +2521,7 @@
+ 	cairo_set_source_rgb(cr, 0.6, 0.6, 0.6);
+ 	zmc_text(cr, "SoC Architecture", FONT_REGULAR, 13, MARGIN, y, 0);
+ 	cairo_set_source_rgb(cr, 1, 1, 1);
+-	zmc_text(cr, "Samsung Exynos 9810 (10nm LPP)", FONT_SEMILIGHT, 20, MARGIN, y + 18, 0);
++	zmc_text(cr, "MediaTek MT6877", FONT_SEMILIGHT, 20, MARGIN, y + 18, 0);
+ 	y += 56;
+ 
+ 	cairo_set_source_rgb(cr, 0.6, 0.6, 0.6);
+@@ -2713,12 +2713,12 @@
+ 	cairo_set_source_rgb(cr, 0.6, 0.6, 0.6);
+ 	zmc_text(cr, "Phone", FONT_REGULAR, 13, MARGIN, y, 0);
+ 	cairo_set_source_rgb(cr, 1, 1, 1);
+-	y += zmc_text(cr, "Samsung Galaxy S9 (SM-G960N starlte)", FONT_SEMILIGHT, 19, MARGIN, y + 18, zmc.width - 2 * MARGIN) + 30;
++	y += zmc_text(cr, "Furi FLX1s (radon)", FONT_SEMILIGHT, 19, MARGIN, y + 18, zmc.width - 2 * MARGIN) + 30;
+ 
+ 	cairo_set_source_rgb(cr, 0.6, 0.6, 0.6);
+ 	zmc_text(cr, "Operating System", FONT_REGULAR, 13, MARGIN, y, 0);
+ 	cairo_set_source_rgb(cr, 1, 1, 1);
+-	y += zmc_text(cr, "ztOS Mobile (Arch Linux ARM)", FONT_SEMILIGHT, 19, MARGIN, y + 18, zmc.width - 2 * MARGIN) + 30;
++	y += zmc_text(cr, "FuriOS, ztMETRO in a window on Phosh", FONT_SEMILIGHT, 19, MARGIN, y + 18, zmc.width - 2 * MARGIN) + 30;
+ 
+ 	struct utsname uts;
+ 	if (uname(&uts) == 0) {

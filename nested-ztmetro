@@ -1,0 +1,32 @@
+#!/bin/bash
+# Run ztOS's ztMETRO shell in a window on Phosh. See docs/ztos-shell.md.
+LIMIT=${NEST_LIMIT:-1800}   # seconds
+OUTPUT=HWCOMPOSER-1 SCALE=2
+ROOT=$HOME/src/ztos N=$ROOT/build/nested
+
+P=$(pgrep -nx phosh) || exit 1
+eval "$(tr '\0' '\n' < /proc/$P/environ \
+  | grep -E '^(WAYLAND_DISPLAY|XDG_RUNTIME_DIR|DBUS_SESSION_BUS_ADDRESS|XDG_DATA_DIRS)=' \
+  | sed -E "s/=(.*)/='\1'/; s/^/export /")"
+mkdir -p /tmp/zt
+. "$HOME/.local/bin/nested-common"
+nested_toggle ztmetro
+
+cleanup() { pkill -x ztmetro; sleep 1; pkill -9 -x ztmetro; nested_restore; }
+trap cleanup EXIT
+trap 'exit 0' INT TERM HUP
+
+wlr-randr --output $OUTPUT --scale 1; sleep 2
+
+export LD_LIBRARY_PATH=$ROOT/build/wlroots/lib/aarch64-linux-gnu
+export LANG=C.UTF-8 WLR_BACKENDS=wayland WLR_NO_HARDWARE_CURSORS=1 \
+  ZTMETRO_NESTED=1 ZTMETRO_SIZE=720x1480 ZTMETRO_SCALE=1.5 \
+  WLR_RENDERER=gles2 WLR_RENDERER_FORCE_SOFTWARE=1 WLR_RENDERER_ALLOW_SOFTWARE=1 \
+  __EGL_VENDOR_LIBRARY_FILENAMES=/usr/share/glvnd/egl_vendor.d/50_mesa.json \
+  LIBGL_ALWAYS_SOFTWARE=1 GALLIUM_DRIVER=llvmpipe
+export HOME=$N/home XDG_CONFIG_HOME=$N/home/.config XDG_DATA_HOME=$N/home/.local/share \
+  XDG_STATE_HOME=$N/home/.local/state XDG_CACHE_HOME=$N/home/.cache PATH=$N/bin:$PATH
+
+cd "$ROOT/ztmetro"
+timeout -k 3 "$LIMIT" ./ztmetro > /tmp/zt/run.log 2>&1 &
+wait $!

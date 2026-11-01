@@ -1,0 +1,8 @@
+#!/bin/bash
+# Put Phosh back at scale 2 once the screen is on. Gives up after an hour.
+for _ in $(seq 720); do
+  if wlr-randr 2>/dev/null | grep -q 'Enabled: yes'; then
+    wlr-randr --output HWCOMPOSER-1 --scale 2; exit 0
+  fi
+  sleep 5
+done

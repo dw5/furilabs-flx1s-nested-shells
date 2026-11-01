@@ -1,0 +1,82 @@
+--- a/render/gles2/renderer.c
++++ b/render/gles2/renderer.c
+@@ -98,8 +98,13 @@
+ 	if (!buffer->rbo) {
+ 		glGenRenderbuffers(1, &buffer->rbo);
+ 		glBindRenderbuffer(GL_RENDERBUFFER, buffer->rbo);
+-		buffer->renderer->procs.glEGLImageTargetRenderbufferStorageOES(GL_RENDERBUFFER,
+-			buffer->image);
++		if (buffer->shm) {
++			glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8_OES,
++				buffer->buffer->width, buffer->buffer->height);
++		} else {
++			buffer->renderer->procs.glEGLImageTargetRenderbufferStorageOES(GL_RENDERBUFFER,
++				buffer->image);
++		}
+ 		glBindRenderbuffer(GL_RENDERBUFFER, 0);
+ 	}
+ 
+@@ -139,13 +144,16 @@
+ 	buffer->renderer = renderer;
+ 
+ 	struct wlr_dmabuf_attributes dmabuf = {0};
+-	if (!wlr_buffer_get_dmabuf(wlr_buffer, &dmabuf)) {
+-		goto error_buffer;
+-	}
+-
+-	buffer->image = wlr_egl_create_image_from_dmabuf(renderer->egl,
+-		&dmabuf, &buffer->external_only);
+-	if (buffer->image == EGL_NO_IMAGE_KHR) {
++	if (wlr_buffer_get_dmabuf(wlr_buffer, &dmabuf)) {
++		buffer->image = wlr_egl_create_image_from_dmabuf(renderer->egl,
++			&dmabuf, &buffer->external_only);
++		if (buffer->image == EGL_NO_IMAGE_KHR) {
++			goto error_buffer;
++		}
++	} else if (renderer->drm_fd < 0) {
++		buffer->shm = true;
++		buffer->image = EGL_NO_IMAGE_KHR;
++	} else {
+ 		goto error_buffer;
+ 	}
+ 
+@@ -179,6 +187,9 @@
+ static const struct wlr_drm_format_set *gles2_get_render_formats(
+ 		struct wlr_renderer *wlr_renderer) {
+ 	struct wlr_gles2_renderer *renderer = gles2_get_renderer(wlr_renderer);
++	if (renderer->drm_fd < 0) {
++		return &renderer->shm_texture_formats;
++	}
+ 	return wlr_egl_get_dmabuf_render_formats(renderer->egl);
+ }
+ 
+@@ -525,7 +536,7 @@
+ 	if (renderer == NULL) {
+ 		return NULL;
+ 	}
+-	wlr_renderer_init(&renderer->wlr_renderer, &renderer_impl, WLR_BUFFER_CAP_DMABUF);
++	wlr_renderer_init(&renderer->wlr_renderer, &renderer_impl, WLR_BUFFER_CAP_DMABUF | WLR_BUFFER_CAP_SHM | WLR_BUFFER_CAP_DATA_PTR);
+ 	renderer->wlr_renderer.features.output_color_transform = false;
+ 
+ 	wl_list_init(&renderer->buffers);
+@@ -542,9 +553,7 @@
+ 	wlr_log(WLR_INFO, "Supported GLES2 extensions: %s", exts_str);
+ 
+ 	if (!renderer->egl->exts.EXT_image_dma_buf_import) {
+-		wlr_log(WLR_ERROR, "EGL_EXT_image_dma_buf_import not supported");
+-		free(renderer);
+-		return NULL;
++		wlr_log(WLR_INFO, "EGL_EXT_image_dma_buf_import not supported, shared memory only");
+ 	}
+ 	if (!check_gl_ext(exts_str, "GL_EXT_texture_format_BGRA8888")) {
+ 		wlr_log(WLR_ERROR, "BGRA8888 format not supported by GLES2");
+--- a/include/render/gles2.h
++++ b/include/render/gles2.h
+@@ -103,6 +103,7 @@
+ 	struct wlr_gles2_renderer *renderer;
+ 	struct wl_list link; // wlr_gles2_renderer.buffers
+ 	bool external_only;
++	bool shm; // rendered offscreen, the user copies it to the buffer
+ 
+ 	EGLImageKHR image;
+ 	GLuint rbo;

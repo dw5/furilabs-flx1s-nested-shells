@@ -1,0 +1,16 @@
+# Shared by the nested-* launchers. Tapping a shell's icon again closes it;
+# starting a shell closes any other one first.
+nested_stop() { pkill -x plasmashell; pkill -x kwin_wayland; pkill -x ztmetro; pkill -9 -x lomiri; }
+nested_running() { pgrep -x plasmashell || pgrep -x kwin_wayland || pgrep -x ztmetro || pgrep -x lomiri; } >/dev/null
+nested_toggle() {  # $1: this shell's process name
+  if pgrep -x "$1" >/dev/null; then nested_stop; exit 0; fi
+  if nested_running; then
+    nested_stop
+    for _ in 1 2 3 4 5 6 7 8; do nested_running || break; sleep 1; done
+    sleep 2
+  fi
+  pkill -f "[n]ested-restore-scale"
+}
+# Waits for the screen to be on: the scale can't be read or checked while it's off.
+nested_restore() { setsid nohup "$HOME_REAL/.local/bin/nested-restore-scale" >/dev/null 2>&1 </dev/null & }
+HOME_REAL=$HOME

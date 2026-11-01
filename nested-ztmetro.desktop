@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=ztMETRO (window)
+Comment=Try the ztOS shell in a window. Tap again to close. Shrinks Phosh while it runs, closes after 30 minutes.
+Exec=/home/furios/.local/bin/nested-ztmetro
+Icon=nested-ztmetro
+Terminal=false
+StartupNotify=false
+Categories=System;
+X-Purism-FormFactor=Workspace;Mobile;

@@ -1,0 +1,42 @@
+#!/bin/bash
+# Run Plasma Mobile in a window on Phosh. See docs/plasma-mobile.md.
+LIMIT=${NEST_LIMIT:-1800}   # seconds
+
+P=$(pgrep -nx phosh) || exit 1
+eval "$(tr '\0' '\n' < /proc/$P/environ \
+  | grep -E '^(WAYLAND_DISPLAY|XDG_RUNTIME_DIR|DBUS_SESSION_BUS_ADDRESS|XDG_DATA_DIRS)=' \
+  | sed -E "s/=(.*)/='\1'/; s/^/export /")"
+L=/tmp/pn; mkdir -p $L
+. "$HOME/.local/bin/nested-common"
+nested_toggle kwin_wayland
+nested_restore   # Plasma runs at the normal scale
+
+cleanup() { pkill -x plasmashell; pkill -x kwin_wayland; pkill -x drkonqi; }
+trap cleanup EXIT
+trap 'exit 0' INT TERM HUP
+
+export LANG=C.UTF-8 XDG_SESSION_TYPE=wayland QT_QPA_PLATFORM=wayland KDE_DEBUG=1 \
+  XDG_MENU_PREFIX=plasma- XDG_CURRENT_DESKTOP=KDE KDE_FULL_SESSION=true \
+  KDE_SESSION_VERSION=6 QT_QPA_PLATFORMTHEME=KDE \
+  XDG_CONFIG_DIRS="$HOME/.config/plasma-mobile:/etc/xdg"
+
+timeout -k 3 "$LIMIT" kwin_wayland --wayland-display "$WAYLAND_DISPLAY" --socket wl-plasma \
+  --width 720 --height 1440 --no-lockscreen --no-global-shortcuts > $L/kwin.log 2>&1 &
+K=$!
+sleep 6
+
+export WAYLAND_DISPLAY=wl-plasma QT_QUICK_CONTROLS_MOBILE=true PLASMA_PLATFORM=phone:handset \
+  QT_QUICK_CONTROLS_STYLE=org.kde.breeze PLASMA_INTEGRATION_USE_PORTAL=1 \
+  PLASMA_DEFAULT_SHELL=org.kde.plasma.mobileshell
+kbuildsycoca6 --noincremental > $L/sycoca.log 2>&1
+
+# Real Vulkan loader and lavapipe, for plasmashell only.
+V=$HOME/.cache/nest-vulkan; mkdir -p "$V"
+ln -sf "$(dpkg -L libvulkan1 | grep -E 'libvulkan\.so\.1\.[0-9]+\.[0-9]+$' | head -1)" "$V/libvulkan.so.1"
+export LD_LIBRARY_PATH=$V QSG_RHI_BACKEND=vulkan QSG_RENDER_LOOP=basic \
+  VK_DRIVER_FILES=/usr/share/vulkan/icd.d/lvp_icd.json \
+  VK_ICD_FILENAMES=/usr/share/vulkan/icd.d/lvp_icd.json \
+  QT_WAYLAND_CLIENT_BUFFER_INTEGRATION=none QSG_INFO=1
+
+plasmashell -p org.kde.plasma.mobileshell > $L/shell.log 2>&1 &
+wait $K

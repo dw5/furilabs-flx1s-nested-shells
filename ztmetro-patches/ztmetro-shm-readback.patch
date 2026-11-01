@@ -1,0 +1,32 @@
+--- a/ztmetro.c
++++ b/ztmetro.c
+@@ -11510,6 +11510,18 @@
+ 			}
+ 		}
+ 	}
++	{
++		/* no DMA-BUFs: the buffer is shared memory, so copy the frame there */
++		void *data; uint32_t format; size_t stride;
++		if (wlr_buffer_begin_data_ptr_access(buffer, WLR_BUFFER_DATA_PTR_ACCESS_WRITE,
++				&data, &format, &stride)) {
++			for (int y = 0; y < output->height; y++) {
++				glReadPixels(0, y, output->width, 1, GL_BGRA_EXT, GL_UNSIGNED_BYTE,
++					(char *)data + y * stride);
++			}
++			wlr_buffer_end_data_ptr_access(buffer);
++		}
++	}
+ 	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+ 	struct timespec t1, t2, t3;
+ 	clock_gettime(CLOCK_MONOTONIC, &t1);
+@@ -11654,6 +11666,10 @@
+ 	wl_list_remove(&output->destroy.link);
+ 	if (output->server->output == output) {
+ 		output->server->output = NULL;
++		if (g_nested) {
++			/* the window was closed: nothing is left to show */
++			wl_display_terminate(output->server->wl_display);
++		}
+ 	}
+ 	free(output);
+ }

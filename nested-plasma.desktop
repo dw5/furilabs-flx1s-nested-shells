@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Plasma Mobile (window)
+Comment=Try Plasma Mobile in a window. Tap again to close. CPU drawn, closes after 30 minutes.
+Exec=/home/furios/.local/bin/nested-plasma
+Icon=nested-plasma
+Terminal=false
+StartupNotify=false
+Categories=System;
+X-Purism-FormFactor=Workspace;Mobile;
