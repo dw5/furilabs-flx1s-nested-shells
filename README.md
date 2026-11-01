@@ -4,6 +4,10 @@ Try Plasma Mobile, Lomiri or ztOS's ztMETRO shell in a window on Phosh, on a Fur
 
 These are demos. Everything draws on the CPU, so they're slow and use a lot of battery.
 
+| Plasma Mobile | Lomiri | ztMETRO | ztMETRO settings |
+|---|---|---|---|
+| <img src="screenshots/plasma-mobile.png" width="180" alt="Plasma Mobile app list"> | <img src="screenshots/lomiri.png" width="180" alt="Lomiri app list with an open window"> | <img src="screenshots/ztmetro-start.png" width="180" alt="ztMETRO start screen and app list"> | <img src="screenshots/ztmetro-about.png" width="180" alt="ztMETRO About page showing the Furi FLX1s"> |
+
 ## Before you start
 
 - **FLX1s only.** The installer stops on anything else, including the FLX1.
