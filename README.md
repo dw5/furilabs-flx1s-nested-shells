@@ -19,8 +19,8 @@ These are demos. Everything draws on the CPU, so they're slow and use a lot of b
 Read `install.sh` first, since it uses `sudo`.
 
 ```
-git clone <repo URL>
-cd <repo>
+git clone https://github.com/dw5/furilabs-flx1s-nested-shells.git
+cd furilabs-flx1s-nested-shells
 ./install.sh                # asks which shells you want
 ./install.sh --dry-run      # shows what would be added, changes nothing
 ./install.sh lomiri plasma  # or name them
